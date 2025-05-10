@@ -1,0 +1,125 @@
+// Prisma schema file
+// Learn more at: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(uuid())
+  username    String
+  email       String   @unique
+  password    String
+  profilePic  String?
+  phoneNumber String?  @unique
+  zipCode     String?
+  address     String?
+  longitude   Float?
+  latitude    Float?
+  role        String   @default("customer")
+  isDeleted   Boolean? @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  carts    Cart[]
+  comments Comment[]
+  stores   Store[]   @relation("StoreOwner")
+}
+
+model Store {
+  id           String   @id @default(uuid())
+  userId       String
+  storeName    String
+  storePicture String
+  longitude    Float?
+  latitude     Float?
+  isDeleted    Boolean? @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], name: "StoreOwner")
+  products Product[]
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  storeId     String
+  name        String
+  description String
+  discount    Int      @default(0)
+  isDeleted   Boolean? @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  store    Store            @relation(fields: [storeId], references: [id])
+  carts    Cart[]
+  comments Comment[]
+  variants ProductVariant[]
+}
+
+model ProductVariant {
+  id             String   @id @default(uuid())
+  productId      String
+  productPrice   Int
+  productStock   Int
+  productSoldout Int      @default(0)
+  // imageUrl       String
+  isDeleted      Boolean? @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  product Product        @relation(fields: [productId], references: [id])
+  images  ProductImage[]
+}
+
+model ProductImage {
+  id        Int      @id @default(autoincrement())
+  productId String
+  imageUrl  String
+  isDeleted Boolean? @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  variant ProductVariant @relation(fields: [productId], references: [id])
+}
+
+model Cart {
+  id        Int      @id @default(autoincrement())
+  productId String
+  userId    String
+  quantity  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  productId String
+  content   String
+  isDeleted Boolean? @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User           @relation(fields: [userId], references: [id])
+  product Product        @relation(fields: [productId], references: [id])
+  images  CommentImage[]
+}
+
+model CommentImage {
+  id        Int      @id @default(autoincrement())
+  commentId Int
+  imageUrl  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  comment Comment @relation(fields: [commentId], references: [id])
+}

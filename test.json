@@ -1,0 +1,7 @@
+{
+  "product": [{ "name": "aaaaa", "description": "aaaaa" }],
+  "variant": [
+    { "price": 1000, "stock": 10, "soldout": 111 },
+    { "price": 1000, "stock": 10, "soldout": 111 }
+  ]
+}
