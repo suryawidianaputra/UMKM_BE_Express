@@ -3,8 +3,8 @@ export const otpGenerator = () => {
   let otp = "";
 
   for (let i = 0; i < 6; i++) {
-    otp += resource[Math.round(Math.random() * resource.length)];
+    otp += resource[Math.floor(Math.random() * resource.length)];
   }
 
-  return otp;
+  return parseInt(otp);
 };

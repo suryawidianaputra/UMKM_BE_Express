@@ -14,7 +14,12 @@ import multer from "multer";
 
 const app = express();
 app.use(cookieParser());
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true,
+  })
+);
 app.use(session(sessionConfig));
 app.use(express.json());
 configDotenv();
@@ -27,5 +32,5 @@ app.use("/image/comments", express.static("upload/comments"));
 app.use("/image/products", express.static("upload/products"));
 
 app.listen(process.env.PORT, () =>
-  console.log(`server runnning on ${process.env.PORT}`)
+  console.log(`Express server runnning on ${process.env.PORT}`)
 );

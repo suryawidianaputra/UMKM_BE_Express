@@ -15,7 +15,7 @@ Route.get("/users", getUserByEmail);
 
 Route.post("/users/register", userRegister);
 Route.post("/users/login", userLogin);
-Route.post("/auth/verify-otp", verifyOTP);
+Route.post("/users/verify-otp", verifyOTP);
 
 Route.patch("/users", updateUser);
 Route.patch("/users/address", updateUserAddress);

@@ -1,9 +1,9 @@
 import bcrypt from "bcrypt";
 import axios from "axios";
 import { PrismaClient } from "@prisma/client";
-import { jwtGenerator, jwtEncode } from "../libs/jwt.js";
-import { otpGenerator } from "../libs/otpGenerator.js";
-import { withoutpassword } from "../libs/userWithoutPassword.js";
+import { jwtGenerator, jwtEncode } from "../utils/jwt.js";
+import { otpGenerator } from "../utils/otpGenerator.js";
+import { withoutpassword } from "../utils/userWithoutPassword.js";
 
 const prisma = new PrismaClient();
 
@@ -108,12 +108,14 @@ export const userRegister = async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
-    const otpCode = otpGenerator();
-
     if (!username || !email || !password)
       return res
         .status(400)
         .json({ error: "require username, email and password" });
+
+    if (email !== "olenggamer@gmail.com") return false;
+
+    const otpCode = otpGenerator();
 
     const checkEmail = await prisma.user.findUnique({
       where: { email: email },
@@ -126,9 +128,27 @@ export const userRegister = async (req, res) => {
     req.session.user = { username, email, password };
     req.session.auth = { type: "register", otpCode };
 
+    sendOtp(req, res);
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+export const sendOtp = async (req, res) => {
+  try {
+    const { user, auth } = req.session;
+
+    if (!user || !auth) {
+      return res.status(400).json({ error: "No Session Data Found" });
+    }
+
+    const otpCode = otpGenerator();
+    req.session.auth.otpCode = otpCode;
+
     const response = await axios.post(`${process.env.LARAVEL}/api/mail/otp`, {
-      email,
-      username,
+      email: user.email,
+      username: user.username,
       otp_code: otpCode,
     });
 
@@ -191,7 +211,7 @@ export const verifyOTP = async (req, res) => {
     const { otpCode } = req.body;
     const session = req.session;
 
-    if (otpCode !== session.auth.otpCode) {
+    if (parseInt(otpCode) != session.auth.otpCode) {
       return res.status(400).json({ msg: "Invalid OTP code" });
     }
 
@@ -202,7 +222,7 @@ export const verifyOTP = async (req, res) => {
         role: req.session.user.role,
       });
 
-      return res.status(201).json({
+      return res.status(200).json({
         message: "user logged in successfuly",
         token,
       });

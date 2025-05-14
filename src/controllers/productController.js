@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { jwtEncode } from "../libs/jwt.js";
+import { jwtEncode } from "../utils/jwt.js";
 
 const prisma = new PrismaClient();
 
