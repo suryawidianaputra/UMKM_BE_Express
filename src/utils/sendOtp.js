@@ -2,10 +2,10 @@ import dotenv from "dotenv";
 import axios from "axios";
 dotenv.config();
 
-export const sendOtp = async ({ email, username, password }) => {
+export const sendOtp = async ({ email, username, otpCode }) => {
   const response = await axios.post(`${process.env.LARAVEL}/api/mail/otp`, {
-    email: user.email,
-    username: user.username,
+    email: email,
+    username: username,
     otp_code: otpCode,
   });
 

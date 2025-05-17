@@ -4,6 +4,7 @@ import { PrismaClient } from "@prisma/client";
 import { jwtGenerator, jwtEncode } from "../utils/jwt.js";
 import { otpGenerator } from "../utils/otpGenerator.js";
 import { withoutpassword } from "../utils/userWithoutPassword.js";
+import { sendOtp } from "../utils/sendOtp.js";
 
 const prisma = new PrismaClient();
 
@@ -125,38 +126,16 @@ export const userRegister = async (req, res) => {
       return res.status(409).json({ error: "Email is already to use" });
     }
 
+    console.log(otpCode);
+
     req.session.user = { username, email, password };
     req.session.auth = { type: "register", otpCode };
 
-    sendOtp(req, res);
-  } catch (err) {
-    console.log(err);
-    return res.status(500).json({ error: "Internal Server Error" });
-  }
-};
+    const response = await sendOtp({ username, email, otpCode });
 
-export const sendOtp = async (req, res) => {
-  try {
-    const { user, auth } = req.session;
-
-    if (!user || !auth) {
-      return res.status(400).json({ error: "No Session Data Found" });
+    if (response.status === 200) {
+      return res.status(200).json({ message: "otp send" });
     }
-
-    const otpCode = otpGenerator();
-    req.session.auth.otpCode = otpCode;
-
-    const response = await axios.post(`${process.env.LARAVEL}/api/mail/otp`, {
-      email: user.email,
-      username: user.username,
-      otp_code: otpCode,
-    });
-
-    if (response.status === 500)
-      return res.status(500).json({ error: response.data });
-
-    if (response.status === 200)
-      return res.status(200).json({ msg: response.data.msg });
   } catch (err) {
     console.log(err);
     return res.status(500).json({ error: "Internal Server Error" });
@@ -186,14 +165,8 @@ export const userLogin = async (req, res) => {
       role: userData.role,
     };
 
-    const response = await axios.post(
-      `${process.env.LARAVEL}/api/send-otp-mail`,
-      {
-        email: userData.email,
-        username: userData.username,
-        otp_code: otpCode,
-      }
-    );
+    const response = await sendOtp({ username, email, otpCode });
+    console.log(otpCode);
 
     if (response.status === 500)
       return res.status(500).json({ error: response.data });
@@ -222,6 +195,9 @@ export const verifyOTP = async (req, res) => {
         role: req.session.user.role,
       });
 
+      req.session.auth = {};
+      req.session.user = {};
+
       return res.status(200).json({
         message: "user logged in successfuly",
         token,
@@ -241,13 +217,50 @@ export const verifyOTP = async (req, res) => {
         user_id: UploadUserData.id,
         email: UploadUserData.email,
         role: UploadUserData.role,
+        //
+        // user_id: 1,
+        // email: "olenggamer@gmail.com",
+        // role: "customer",
       });
+
+      req.session.auth = {};
+      req.session.user = {};
 
       return res.status(201).json({
         message: "user registered successfuly",
         token,
       });
     }
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+export const reSendOtp = async (req, res) => {
+  try {
+    const { user, auth } = req.session;
+
+    if (!user || !auth) {
+      return res.status(400).json({ error: "No Session Data Found" });
+    }
+
+    const otpCode = otpGenerator();
+    req.session.auth.otpCode = otpCode;
+
+    // const response = await axios.post(`${process.env.LARAVEL}/api/mail/otp`, {
+    //   email: user.email,
+    //   username: user.username,
+    //   otp_code: otpCode,
+    // });
+
+    const response = sendOtp({ username, email, otpCode });
+
+    if (response.status === 500)
+      return res.status(500).json({ error: response.data });
+
+    if (response.status === 200)
+      return res.status(200).json({ msg: response.data.msg });
   } catch (err) {
     console.log(err);
     return res.status(500).json({ error: "Internal Server Error" });
