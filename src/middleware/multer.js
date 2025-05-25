@@ -41,5 +41,5 @@ const filter = (req, file, cb) => {
 };
 
 export const multerImage = multer({ storage: product, fileFilter: filter });
-export const multerAvatar = multer({ storage: product, fileFilter: filter });
-export const multerComment = multer({ storage: product, fileFilter: filter });
+export const multerAvatar = multer({ storage: userAvatar, fileFilter: filter });
+export const multerComment = multer({ storage: comments, fileFilter: filter });

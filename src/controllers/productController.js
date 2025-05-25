@@ -6,9 +6,17 @@ const prisma = new PrismaClient();
 export const getProductById = async (req, res) => {
   try {
     const productData = await prisma.product.findUnique({
-      where: { id: req.params.product_id },
+      where: { id: req.params.product_id, isDeleted: false },
       include: {
-        variants: true,
+        variants: {
+          include: {
+            images: {
+              include: true,
+              where: { isDeleted: false },
+            },
+          },
+          where: { isDeleted: false },
+        },
         comments: true,
         store: true,
       },
@@ -63,7 +71,7 @@ export const uploadProduct = async (req, res) => {
 
       await prisma.productImage.create({
         data: {
-          productId: v.id,
+          variantId: v.id,
           imageUrl: req.files[i]?.filename,
         },
       });
@@ -158,14 +166,14 @@ export const deleteProduct = async (req, res) => {
 
 export const updateProduct = async (req, res) => {
   try {
-    const productId = req.params.id;
-
     const { variant } = JSON.parse(req.body.variant);
-    const { product } = JSON.parse(req.body.product);
+    const product = JSON.parse(req.body.product);
 
-    // Update data utama produk
-    const updatedProduct = await prisma.product.update({
-      where: { id: productId },
+    const files = req.files; // array dari multer
+
+    // Update product utama
+    await prisma.product.update({
+      where: { id: product.id },
       data: {
         name: product.name,
         description: product.description,
@@ -173,49 +181,43 @@ export const updateProduct = async (req, res) => {
       },
     });
 
-    // Hapus semua variant dan image lama (atau lakukan partial update)
-    await prisma.productVariant.deleteMany({ where: { productId } });
-    await prisma.productImage.deleteMany({
-      where: {
-        product: {
-          id: productId,
-        },
-      },
-    });
-
-    // Tambah variant baru dan gambar baru
+    // Update tiap variant
+    // console.log(variant);
+    // return;
     for (let i = 0; i < variant.length; i++) {
-      const newVariant = await prisma.productVariant.create({
+      const v = variant[i];
+      const file = files[i];
+
+      // Update variant info
+      await prisma.productVariant.update({
+        where: { id: v.id },
         data: {
-          productId: productId,
-          productPrice: variant[i]["productPrice"],
-          productStock: variant[i]["productStock"],
-          productSoldout: 0,
+          productVariantName: v.productVariantName,
+          productPrice: v.productPrice,
+          productStock: v.productStock,
         },
       });
 
-      if (req.files[i]) {
+      if (file) {
+        // Hapus gambar lama (soft delete)
+        await prisma.productImage.updateMany({
+          where: { variantId: v.id, isDeleted: false },
+          data: { isDeleted: true },
+        });
+
+        // Simpan gambar baru
         await prisma.productImage.create({
           data: {
-            productId: newVariant.id,
-            imageUrl: req.files[i]["filename"],
+            variantId: v.id,
+            imageUrl: file.filename, // filename dari multer
           },
         });
       }
     }
 
-    const result = await prisma.product.findUnique({
-      where: { id: productId },
-      include: {
-        variants: {
-          include: { images: true },
-        },
-      },
-    });
-
-    return res.status(200).json({ data: result });
-  } catch (err) {
-    console.log(err);
-    return res.status(500).json({ message: "Internal Server Error" });
+    res.status(200).json({ message: "Product updated successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Update failed", error });
   }
 };

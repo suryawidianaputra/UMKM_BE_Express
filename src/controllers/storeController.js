@@ -62,10 +62,15 @@ export const getStoreByUserId = async (req, res) => {
           include: {
             variants: {
               include: {
-                images: true,
+                images: {
+                  include: true,
+                  where: { isDeleted: false },
+                },
               },
+              where: { isDeleted: false },
             },
           },
+          where: { isDeleted: false },
         },
       },
     });

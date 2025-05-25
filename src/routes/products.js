@@ -17,7 +17,7 @@ router.get("/stores/:store_id/products", getProductByStore);
 
 router.post("/products", cpUpload, uploadProduct);
 
-router.patch("/products/:id", cpUpload, updateProduct);
+router.put("/products/:id", cpUpload, updateProduct);
 
 router.delete("/products/:product_id", deleteProduct);
 
