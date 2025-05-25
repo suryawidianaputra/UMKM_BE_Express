@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import axios from "axios";
 import { PrismaClient } from "@prisma/client";
-import { jwtGenerator, jwtEncode } from "../utils/jwt.js";
+import { jwtGenerator, jwtDecode } from "../utils/jwt.js";
 import { otpGenerator } from "../utils/otpGenerator.js";
 import { withoutpassword } from "../utils/userWithoutPassword.js";
 import { sendOtp } from "../utils/sendOtp.js";
@@ -10,12 +10,17 @@ const prisma = new PrismaClient();
 
 export const getUserByEmail = async (req, res) => {
   try {
-    const token = jwtEncode(req.cookies.token);
+    const token = jwtDecode(req.cookies.token);
 
-    const UserData = await prisma.user.findUnique({
+    const UserData = await prisma.user.findFirst({
       where: {
         email: token.email,
-        isDeleted: !true,
+        isDeleted: false,
+      },
+      include: {
+        comments: true,
+        carts: true,
+        address: true,
       },
     });
 
@@ -23,28 +28,43 @@ export const getUserByEmail = async (req, res) => {
       return res.status(404).json({ error: "Data not found" });
     }
 
+    console.log(withoutpassword(UserData));
+
     return res.status(200).json({
-      message: "User found",
-      data: withoutpassword(userData),
+      data: withoutpassword(UserData),
     });
   } catch (err) {
-    return console.log(err);
+    console.log(err);
     return res.status(500).json({ message: "Internal Server Error." });
   }
 };
 
 export const updateUser = async (req, res) => {
   try {
-    const token = jwtEncode(req.cookie.token);
+    const token = jwtDecode(req.cookie.token);
+    const { profilePic, gender, dateOfBirth, longitude, latitude } = req.body;
+
+    const updateData = {};
+
+    if (profilePic !== undefined) updateData.profilePic = profilePic;
+    if (gender !== undefined) updateData.gender = gender;
+    if (dateOfBirth !== undefined) updateData.dateOfBirth = dateOfBirth;
+    if (longitude !== undefined) updateData.longitude = longitude;
+    if (latitude !== undefined) updateData.latitude = latitude;
+
+    const userData = await prisma.user.update({
+      where: { id: token.id },
+      data: updateData,
+    });
   } catch (err) {
-    return console.log(err);
+    console.log(err);
     return res.status(500).json({ message: "Internal Server Error." });
   }
 };
 
 export const deleteUser = async (req, res) => {
   try {
-    const token = jwtEncode(req.cookies.token);
+    const token = jwtDecode(req.cookies.token);
     const userData = prisma.user.findUnique({
       where: { id: token.id, email: token.email },
     });
@@ -70,7 +90,7 @@ export const deleteUser = async (req, res) => {
 export const updateUserAddress = async (req, res) => {
   try {
     const { phoneNumber, zipCode, address, longitude, latitude } = req.body;
-    const token = jwtEncode(req.cookies.token);
+    const token = jwtDecode(req.cookies.token);
 
     const user = await prisma.user.findUnique({
       where: { email: decoded.email },
@@ -108,13 +128,14 @@ export const updatePassword = async (req, res) => {
 export const userRegister = async (req, res) => {
   try {
     const { username, email, password } = req.body;
+    console.log("req bos");
 
     if (!username || !email || !password)
       return res
         .status(400)
         .json({ error: "require username, email and password" });
 
-    if (email !== "olenggamer@gmail.com") return false;
+    // if (email !== "olenggamer@gmail.com") return false;
 
     const otpCode = otpGenerator();
 
@@ -132,6 +153,7 @@ export const userRegister = async (req, res) => {
     req.session.auth = { type: "register", otpCode };
 
     const response = await sendOtp({ username, email, otpCode });
+    console.log(otpCode);
 
     if (response.status === 200) {
       return res.status(200).json({ message: "otp send" });

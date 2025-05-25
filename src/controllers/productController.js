@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { jwtEncode } from "../utils/jwt.js";
+import { jwtDecode } from "../utils/jwt.js";
 
 const prisma = new PrismaClient();
 
@@ -30,12 +30,18 @@ export const uploadProduct = async (req, res) => {
     const { variant } = JSON.parse(req.body.variant);
     const { product } = JSON.parse(req.body.product);
 
-    const token = jwtEncode(req.cookies.token);
+    if (!req.files || req.files.length !== variant.length) {
+      return res
+        .status(400)
+        .json({ message: "Jumlah gambar dan variant tidak cocok." });
+    }
+
+    const token = jwtDecode(req.cookies.token);
     const storeData = await prisma.store.findUnique({
-      where: { userId: token.user_id },
+      where: { userId: token.userId },
     });
 
-    const upload = await prisma.product.create({
+    const createdProduct = await prisma.product.create({
       data: {
         storeId: storeData.id,
         name: product.name,
@@ -44,26 +50,27 @@ export const uploadProduct = async (req, res) => {
       },
     });
 
-    for (let i = 1; i <= variant.length; i++) {
+    for (let i = 0; i < variant.length; i++) {
       const v = await prisma.productVariant.create({
         data: {
-          productId: upload.id,
-          productPrice: variant[i - 1]["productPrice"],
-          productStock: variant[i - 1]["productStock"],
+          productId: createdProduct.id,
+          productPrice: variant[i].productPrice,
+          productStock: variant[i].productStock,
+          productVariantName: variant[i].productVariantName,
           productSoldout: 0,
         },
       });
 
-      const vImg = await prisma.productImage.create({
+      await prisma.productImage.create({
         data: {
           productId: v.id,
-          imageUrl: req.files[i - 1]["filename"],
+          imageUrl: req.files[i]?.filename,
         },
       });
     }
 
-    const result = await prisma.product.findUnique({
-      where: { id: upload.id },
+    const result = await prisma.product.findFirst({
+      where: { id: createdProduct.id },
       include: {
         variants: {
           include: {
@@ -75,7 +82,7 @@ export const uploadProduct = async (req, res) => {
 
     return res.status(200).json({ data: result });
   } catch (err) {
-    console.log(err);
+    console.error("Upload Product Error:", err);
     return res.status(500).json({ message: "Internal Server Error." });
   }
 };
@@ -146,5 +153,69 @@ export const deleteProduct = async (req, res) => {
   } catch (err) {
     console.log(err);
     return res.status(500).json({ message: "Internal Server Error. " });
+  }
+};
+
+export const updateProduct = async (req, res) => {
+  try {
+    const productId = req.params.id;
+
+    const { variant } = JSON.parse(req.body.variant);
+    const { product } = JSON.parse(req.body.product);
+
+    // Update data utama produk
+    const updatedProduct = await prisma.product.update({
+      where: { id: productId },
+      data: {
+        name: product.name,
+        description: product.description,
+        discount: product.discount,
+      },
+    });
+
+    // Hapus semua variant dan image lama (atau lakukan partial update)
+    await prisma.productVariant.deleteMany({ where: { productId } });
+    await prisma.productImage.deleteMany({
+      where: {
+        product: {
+          id: productId,
+        },
+      },
+    });
+
+    // Tambah variant baru dan gambar baru
+    for (let i = 0; i < variant.length; i++) {
+      const newVariant = await prisma.productVariant.create({
+        data: {
+          productId: productId,
+          productPrice: variant[i]["productPrice"],
+          productStock: variant[i]["productStock"],
+          productSoldout: 0,
+        },
+      });
+
+      if (req.files[i]) {
+        await prisma.productImage.create({
+          data: {
+            productId: newVariant.id,
+            imageUrl: req.files[i]["filename"],
+          },
+        });
+      }
+    }
+
+    const result = await prisma.product.findUnique({
+      where: { id: productId },
+      include: {
+        variants: {
+          include: { images: true },
+        },
+      },
+    });
+
+    return res.status(200).json({ data: result });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ message: "Internal Server Error" });
   }
 };

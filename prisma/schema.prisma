@@ -11,19 +11,21 @@ datasource db {
 }
 
 model User {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   username    String
-  email       String   @unique
+  email       String    @unique
   password    String
   profilePic  String?
-  phoneNumber String?  @unique
+  phoneNumber String?   @unique
   zipCode     String?
   longitude   Float?
   latitude    Float?
-  role        String   @default("customer")
-  isDeleted   Boolean? @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  dateOfBirth DateTime?
+  gender      String?
+  role        String    @default("customer")
+  isDeleted   Boolean?  @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   carts    Cart[]
   comments Comment[]
@@ -42,18 +44,17 @@ model UserAddress {
 }
 
 model Store {
-  id           String   @id @default(uuid())
-  userId       String
-  storeName    String
-  storePicture String
-  longitude    Float?
-  latitude     Float?
-  isDeleted    Boolean? @default(false)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  user     User      @relation(fields: [userId], references: [id], name: "StoreOwner")
-  products Product[]
+  id               String    @id @default(uuid())
+  userId           String    @unique
+  storeName        String    @unique
+  storePicture     String
+  storeDescription String?
+  isActive         Boolean   @default(false)
+  isDeleted        Boolean?  @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  user             User      @relation(fields: [userId], references: [id], name: "StoreOwner")
+  products         Product[]
 }
 
 model Product {
@@ -73,15 +74,15 @@ model Product {
 }
 
 model ProductVariant {
-  id             String   @id @default(uuid())
-  productId      String
-  productPrice   Int
-  productStock   Int
-  productSoldout Int      @default(0)
-  // imageUrl       String
-  isDeleted      Boolean? @default(false)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id                 String   @id @default(uuid())
+  productId          String
+  productVariantName String
+  productPrice       Int
+  productStock       Int
+  productSoldout     Int      @default(0)
+  isDeleted          Boolean? @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   product Product        @relation(fields: [productId], references: [id])
   images  ProductImage[]

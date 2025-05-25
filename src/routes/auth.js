@@ -1,10 +1,10 @@
 import express from "express";
 import { authMiddleware } from "../middleware/authMiddleware.js";
-import { userLogin, userRegister } from "../controllers/authController.js";
+import { canCheckout, canComment } from "../controllers/authController.js";
 
-const Route = express.Router();
+const router = express.Router();
 
-Route.post("/login", userLogin);
-Route.post("/register", userRegister);
+router.post("/auth/check/comment", canComment);
+router.post("/auth/check/checkout", canCheckout);
 
-export default Route;
+export default router;
