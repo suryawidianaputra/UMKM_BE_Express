@@ -89,7 +89,6 @@ export const getStoreByUserId = async (req, res) => {
 export const getStoreByStoreId = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log(id);
 
     const storeData = await prisma.store.findFirst({
       where: { id },

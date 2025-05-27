@@ -28,8 +28,6 @@ export const getUserByEmail = async (req, res) => {
       return res.status(404).json({ error: "Data not found" });
     }
 
-    console.log(withoutpassword(UserData));
-
     return res.status(200).json({
       data: withoutpassword(UserData),
     });
@@ -82,7 +80,7 @@ export const deleteUser = async (req, res) => {
       .status(200)
       .json({ message: "user deleted", data: withoutpassword(deleteUser) });
   } catch (err) {
-    return console.log(err);
+    console.log(err);
     return res.status(500).json({ message: "Internal Server Error." });
   }
 };
@@ -119,7 +117,7 @@ export const updatePassword = async (req, res) => {
   try {
     //
   } catch (err) {
-    console.error(error);
+    console.error(err);
     return res.status(500).json({ message: "Internal Server Error." });
   }
 };
@@ -128,7 +126,6 @@ export const updatePassword = async (req, res) => {
 export const userRegister = async (req, res) => {
   try {
     const { username, email, password } = req.body;
-    console.log("req bos");
 
     if (!username || !email || !password)
       return res
@@ -146,8 +143,6 @@ export const userRegister = async (req, res) => {
     if (checkEmail != null) {
       return res.status(409).json({ error: "Email is already to use" });
     }
-
-    console.log(otpCode);
 
     req.session.user = { username, email, password };
     req.session.auth = { type: "register", otpCode };

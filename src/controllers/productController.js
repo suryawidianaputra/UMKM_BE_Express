@@ -181,9 +181,6 @@ export const updateProduct = async (req, res) => {
       },
     });
 
-    // Update tiap variant
-    // console.log(variant);
-    // return;
     for (let i = 0; i < variant.length; i++) {
       const v = variant[i];
       const file = files[i];
@@ -219,5 +216,40 @@ export const updateProduct = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Update failed", error });
+  }
+};
+
+export const getRandomProduct = async (req, res) => {
+  try {
+    const randomProducts = await prisma.$queryRaw`
+      SELECT id FROM Product ORDER BY RANDOM() LIMIT 20
+    `;
+
+    const productData = await prisma.product.findMany({
+      where: {
+        id: {
+          in: randomProducts.map((p) => p.id),
+        },
+        isDeleted: false,
+      },
+      include: {
+        variants: {
+          include: { images: { where: { isDeleted: false } } },
+          where: { isDeleted: false },
+        },
+        store: true,
+        comments: { include: { images: true } },
+      },
+      take: 20,
+    });
+
+    if (!productData) {
+      return res.status(404).json({ error: "Data not found" });
+    }
+
+    return res.status(200).json({ data: productData });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ error: err.message });
   }
 };

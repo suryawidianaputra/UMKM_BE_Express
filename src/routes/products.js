@@ -5,12 +5,15 @@ import {
   getProductByStore,
   deleteProduct,
   updateProduct,
+  getRandomProduct,
 } from "../controllers/productController.js";
 import { multerImage } from "../middleware/multer.js";
 
 const router = express.Router();
 // const cpUpload = upload.array("files");
 const cpUpload = multerImage.array("files");
+
+router.get("/products/random", getRandomProduct);
 
 router.get("/products/:product_id", getProductById);
 router.get("/stores/:store_id/products", getProductByStore);

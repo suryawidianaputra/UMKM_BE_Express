@@ -55,3 +55,21 @@ export const canComment = async (req, res) => {
     return res.status(500).json({ error: err.message });
   }
 };
+
+export const isSeller = async (req, res) => {
+  try {
+    const token = jwtDecode(req.cookies.token);
+    const existingStore = await prisma.store.findFirst({
+      where: { userId: token.userId },
+    });
+
+    if (!existingStore) {
+      return res.status(200).json({ status: 400 });
+    }
+
+    return res.status(200).json({ status: 200 });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ error: err.message });
+  }
+};

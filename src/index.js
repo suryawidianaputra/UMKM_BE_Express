@@ -14,6 +14,8 @@ import userRoute from "./routes/users.js";
 import productRoute from "./routes/products.js";
 import authRoute from "./routes/auth.js";
 import storeRoute from "./routes/stores.js";
+import cartRoute from "./routes/carts.js";
+import transactionRoute from "./routes/transaction.js";
 
 const app = express();
 app.use(cookieParser());
@@ -31,6 +33,8 @@ app.use(userRoute);
 app.use(productRoute);
 app.use(authRoute);
 app.use(storeRoute);
+app.use(cartRoute);
+app.use(transactionRoute);
 
 app.use("/images/avatars", express.static("upload/avatars"));
 app.use("/images/comments", express.static("upload/comments"));

@@ -27,10 +27,11 @@ model User {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  carts    Cart[]
-  comments Comment[]
-  stores   Store[]       @relation("StoreOwner")
-  address  UserAddress[]
+  carts       Cart[]
+  comments    Comment[]
+  stores      Store[]       @relation("StoreOwner")
+  address     UserAddress[]
+  Transaction Transaction[]
 }
 
 model UserAddress {
@@ -67,10 +68,11 @@ model Product {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  store    Store            @relation(fields: [storeId], references: [id])
-  carts    Cart[]
-  comments Comment[]
-  variants ProductVariant[]
+  store       Store            @relation(fields: [storeId], references: [id])
+  carts       Cart[]
+  comments    Comment[]
+  variants    ProductVariant[]
+  Transaction Transaction[]
 }
 
 model ProductVariant {
@@ -84,8 +86,10 @@ model ProductVariant {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
-  product Product        @relation(fields: [productId], references: [id])
-  images  ProductImage[]
+  product     Product        @relation(fields: [productId], references: [id])
+  images      ProductImage[]
+  Cart        Cart[]
+  Transaction Transaction[]
 }
 
 model ProductImage {
@@ -102,13 +106,15 @@ model ProductImage {
 model Cart {
   id        Int      @id @default(autoincrement())
   productId String
+  variantId String
   userId    String
   quantity  Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user    User    @relation(fields: [userId], references: [id])
-  product Product @relation(fields: [productId], references: [id])
+  user    User           @relation(fields: [userId], references: [id])
+  product Product        @relation(fields: [productId], references: [id])
+  variant ProductVariant @relation(fields: [variantId], references: [id])
 
   @@unique([productId, userId])
 }
@@ -135,4 +141,22 @@ model CommentImage {
   updatedAt DateTime @updatedAt
 
   comment Comment @relation(fields: [commentId], references: [id])
+}
+
+model Transaction {
+  id              String @id @default(uuid())
+  userId          String
+  productId       String
+  variantId       String
+  productQuantity Int
+  totalAmount     Int
+  status          String
+  shipingStatus   String @default("Dikemas")
+  resi            String
+
+  product   Product        @relation(fields: [productId], references: [id])
+  variant   ProductVariant @relation(fields: [variantId], references: [id])
+  user      User           @relation(fields: [userId], references: [id])
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
 }

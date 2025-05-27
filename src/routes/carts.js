@@ -12,11 +12,11 @@ const router = express.Router();
 
 router.post("/carts", createCart);
 
-router.get("/carts/:cart_id", getCartById);
-router.get("/users/:user_id/carts", getCartByUserId);
+router.get("/carts/:id", getCartById);
+router.get("/users/carts", getCartByUserId);
 
-router.patch("/carts/:cart_id", updateCart);
+router.put("/carts", updateCart);
 
-router.delete("/carts/:cart_id", deleteCart);
+router.delete("/carts/:id", deleteCart);
 
 export default router;
